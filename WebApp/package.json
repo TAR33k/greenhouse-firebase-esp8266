@@ -1,0 +1,15 @@
+{
+  "name": "firebase-esp8266-webapp",
+  "version": "1.0.0",
+  "main": "index.js",
+  "scripts": {
+    "test": "echo \"Error: no test specified\" && exit 1"
+  },
+  "keywords": [],
+  "author": "",
+  "license": "ISC",
+  "description": "",
+  "dependencies": {
+    "firebase": "^11.1.0"
+  }
+}
