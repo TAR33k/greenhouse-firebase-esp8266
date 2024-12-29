@@ -34,10 +34,10 @@ DHT dht_sensor(DHT_PIN, DHT_TYPE);
 float tankHeight = 7.5; // Default tank height in cm
 
 // LED Pins for progress bar
-#define RED_LED1 D1
-#define YELLOW_LED1 D2
-#define YELLOW_LED2 D3
-#define GREEN_LED1 D4
+#define RED_LED1 D4
+#define YELLOW_LED1 D3
+#define YELLOW_LED2 D2
+#define GREEN_LED1 D1
 
 // Firebase objects
 FirebaseData fbdo;
