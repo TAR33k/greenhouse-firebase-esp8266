@@ -39,6 +39,11 @@ float tankHeight = 7.5; // Default tank height in cm
 #define YELLOW_LED2 D2
 #define GREEN_LED1 D1
 
+// Relay Pin for water pump
+#define PUMP_RELAY_PIN D8
+#define RELAY_ON LOW
+#define RELAY_OFF HIGH
+
 // Firebase objects
 FirebaseData fbdo;
 FirebaseAuth auth;
@@ -56,6 +61,8 @@ bool systemEnabled = false;
 struct {
   float soilMoisture = 30.0;
   float waterLevel = 20.0;
+  bool automaticMode = true;  // Pump control mode
+  bool pumpManualState = false;  // Manual pump control state
 } thresholds;
 
 WiFiUDP ntpUDP;
@@ -116,6 +123,31 @@ float calculateWaterLevelPercentage(float distance) {
   return constrain((waterHeight / tankHeight) * 100, 0, 100);
 }
 
+// Function to control the water pump
+void controlPump(float soilMoisture, float waterLevel) {
+    if (!systemEnabled) {
+        digitalWrite(PUMP_RELAY_PIN, RELAY_OFF);
+        return;
+    }
+
+    Serial.println("-------- Pump Control Status --------");
+    Serial.printf("Mode: %s\n", thresholds.automaticMode ? "AUTO" : "MANUAL");
+    Serial.printf("Soil Moisture: %.1f%% (Threshold: %.1f%%)\n", soilMoisture, thresholds.soilMoisture);
+    Serial.printf("Water Level: %.1f%% (Threshold: %.1f%%)\n", waterLevel, thresholds.waterLevel);
+    
+    if (thresholds.automaticMode) {
+        bool shouldPumpRun = soilMoisture < thresholds.soilMoisture && 
+                           waterLevel > thresholds.waterLevel;
+        
+        digitalWrite(PUMP_RELAY_PIN, shouldPumpRun ? RELAY_ON : RELAY_OFF);
+        Serial.printf("Auto Mode - Pump: %s\n", shouldPumpRun ? "ON" : "OFF");
+    } else {
+        digitalWrite(PUMP_RELAY_PIN, thresholds.pumpManualState ? RELAY_ON : RELAY_OFF);
+        Serial.printf("Manual Mode - Pump: %s\n", thresholds.pumpManualState ? "ON" : "OFF");
+    }
+    Serial.println("-----------------------------------");
+}
+
 // Function to handle system control and thresholds
 void handleControlUpdates() {
   if (Firebase.RTDB.getBool(&fbdo, "system/status")) {
@@ -137,16 +169,31 @@ void handleControlUpdates() {
     tankHeight = fbdo.floatData();
     Serial.printf("Tank height updated: %.2f cm\n", tankHeight);
   }
+
+  if (Firebase.RTDB.getBool(&fbdo, "pump/automaticMode")) {
+        thresholds.automaticMode = fbdo.boolData();
+        Serial.printf("Pump mode updated: %s\n", thresholds.automaticMode ? "AUTO" : "MANUAL");
+    } else {
+        Serial.printf("Failed to get pump mode: %s\n", fbdo.errorReason().c_str());
+    }
+
+    if (Firebase.RTDB.getBool(&fbdo, "pump/manualState")) {
+        thresholds.pumpManualState = fbdo.boolData();
+        Serial.printf("Manual pump state updated: %s\n", thresholds.pumpManualState ? "ON" : "OFF");
+    } else {
+        Serial.printf("Failed to get manual pump state: %s\n", fbdo.errorReason().c_str());
+    }
 }
 
 // Function to send data to Firebase
 void sendDataToFirebase() {
   if (!systemEnabled) {
-    // Turn off all LEDs when system is disabled
+    // Turn off all LEDs and pump when system is disabled
     digitalWrite(RED_LED1, LOW);
     digitalWrite(YELLOW_LED1, LOW);
     digitalWrite(YELLOW_LED2, LOW);
     digitalWrite(GREEN_LED1, LOW);
+    digitalWrite(PUMP_RELAY_PIN, RELAY_OFF);
     return;
   }
 
@@ -170,6 +217,7 @@ void sendDataToFirebase() {
     Firebase.RTDB.setFloat(&fbdo, "sensor/temperature_F", temperature_F);
     Firebase.RTDB.setFloat(&fbdo, "sensor/soil_moisture", soilMoisture);
     Firebase.RTDB.setFloat(&fbdo, "sensor/water_level_percentage", waterLevelPercentage);
+    Firebase.RTDB.setBool(&fbdo, "sensor/pump_status", digitalRead(PUMP_RELAY_PIN));
   }
 
   // Add timestamp and save to history
@@ -191,6 +239,7 @@ void sendDataToFirebase() {
       Firebase.RTDB.setFloat(&fbdo, historyPath + "/humidity", humidity) &&
       Firebase.RTDB.setFloat(&fbdo, historyPath + "/soil_moisture", soilMoisture) &&
       Firebase.RTDB.setFloat(&fbdo, historyPath + "/water_level_percentage", waterLevelPercentage) &&
+      Firebase.RTDB.setBool(&fbdo, historyPath + "/pump_status", digitalRead(PUMP_RELAY_PIN)) &&  // Add pump status to history
       Firebase.RTDB.setString(&fbdo, historyPath + "/timestamp", timestamp) &&
       Firebase.RTDB.setString(&fbdo, historyPath + "/formatted_time", formattedTime)) {
       
@@ -198,6 +247,9 @@ void sendDataToFirebase() {
   } else {
       Serial.println("Failed to save history data: " + fbdo.errorReason());
   }
+
+  // Control pump based on current readings
+  controlPump(soilMoisture, waterLevelPercentage);
 
   // Check thresholds and take action
   if (soilMoisture < thresholds.soilMoisture) {
@@ -237,6 +289,8 @@ void setup() {
 
   pinMode(TRIG_PIN, OUTPUT);
   pinMode(ECHO_PIN, INPUT);
+  pinMode(PUMP_RELAY_PIN, OUTPUT);
+  digitalWrite(PUMP_RELAY_PIN, RELAY_OFF);
 
   // Set LED pins as outputs
   pinMode(RED_LED1, OUTPUT);
@@ -246,6 +300,12 @@ void setup() {
 
   initWiFi();
   initFirebase();
+
+  if (Firebase.ready()) {
+          Firebase.RTDB.setBool(&fbdo, "pump/automaticMode", true);
+          Firebase.RTDB.setBool(&fbdo, "pump/manualState", false);
+          Firebase.RTDB.setBool(&fbdo, "sensor/pump_status", false);
+      }
 
   dht_sensor.begin();
 }
