@@ -68,8 +68,33 @@ struct {
 WiFiUDP ntpUDP;
 NTPClient timeClient(ntpUDP, "pool.ntp.org");
 
+// Add these constants to replace magic numbers
+#define LED_UPDATE_INTERVAL 50
+#define ROTATIONS_REQUIRED 2
+
+// Modify timing constants for better readability
+#define SOS_DELAY_DOT 200    // Short flash
+#define SOS_DELAY_DASH 400   // Long flash
+#define SOS_DELAY_BETWEEN 600  // Pause between letters
+#define POLICE_DELAY 300     // Rotation speed
+
+bool sosSignalEnabled = false;
+bool policeRotationEnabled = false;
+int policeState = 0;
+unsigned long lastLedCheck = 0;
+bool preventPatternOverride = false;
+static int totalRotations = 0;
+static unsigned long lastPatternUpdate = 0;
+
 const long gmtOffset_sec = 3600;  // GMT+1 (3600 seconds = 1 hour)
 const char* ntpServer = "pool.ntp.org";
+
+void setAllLEDs(bool state) {
+  digitalWrite(RED_LED1, state);
+  digitalWrite(YELLOW_LED1, state);
+  digitalWrite(YELLOW_LED2, state);
+  digitalWrite(GREEN_LED1, state);
+}
 
 // Function to initialize Wi-Fi
 void initWiFi() {
@@ -79,7 +104,7 @@ void initWiFi() {
         Serial.print(".");
         delay(300);
     }
-    Serial.println("\nConnected with IP: " + WiFi.localIP().toString());
+    Serial.println("\nConnected with IP: " + WiFi.localIP().toString() + ", to: " + WIFI_SSID);
 
     // Initialize NTP with correct timezone
     timeClient.begin();
@@ -121,6 +146,93 @@ float calculateWaterLevelPercentage(float distance) {
   if (distance > tankHeight) return 0;  // Tank is empty
   float waterHeight = tankHeight - distance;
   return constrain((waterHeight / tankHeight) * 100, 0, 100);
+}
+
+void performSOSSignal() {
+  static int sosPattern[] = {
+    1,0, 1,0, 1,0,         // S (dot dot dot)
+    0,                      // Letter space
+    1,1,0, 1,1,0, 1,1,0,   // O (dash dash dash)
+    0,                      // Letter space
+    1,0, 1,0, 1,0          // S (dot dot dot)
+  };
+  static int patternLength = sizeof(sosPattern) / sizeof(sosPattern[0]);
+  static int currentStep = 0;
+  
+  if (!sosSignalEnabled || !systemEnabled) {
+    currentStep = 0;
+    setAllLEDs(LOW);
+    return;
+  }
+
+  unsigned long currentMillis = millis();
+  if (currentMillis - lastPatternUpdate >= (sosPattern[currentStep] == 1 ? SOS_DELAY_DASH : SOS_DELAY_DOT)) {
+    // Set all LEDs to the current pattern state
+    digitalWrite(RED_LED1, sosPattern[currentStep]);
+    digitalWrite(YELLOW_LED1, sosPattern[currentStep]);
+    digitalWrite(YELLOW_LED2, sosPattern[currentStep]);
+    digitalWrite(GREEN_LED1, sosPattern[currentStep]);
+    
+    currentStep++;
+    lastPatternUpdate = currentMillis;
+    
+    // If pattern is complete
+    if (currentStep >= patternLength) {
+      currentStep = 0;
+      sosSignalEnabled = false;
+      preventPatternOverride = false;
+      Firebase.RTDB.setBool(&fbdo, "system/sosSignal", false);
+      Serial.println("SOS cycle complete, disabled");
+      
+      // Turn off all LEDs
+      setAllLEDs(LOW);
+    }
+  }
+}
+
+void performPoliceRotation() {
+  if (!policeRotationEnabled || !systemEnabled) {
+    policeState = 0;
+    totalRotations = 0;
+    setAllLEDs(LOW);
+    return;
+  }
+
+  unsigned long currentMillis = millis();
+  if (currentMillis - lastPatternUpdate > POLICE_DELAY) {
+    // Turn all LEDs off first
+    setAllLEDs(LOW);
+    
+    // Update state based on current position
+    switch(policeState) {
+      case 0: digitalWrite(RED_LED1, HIGH); break;
+      case 1: digitalWrite(YELLOW_LED1, HIGH); break;
+      case 2: digitalWrite(YELLOW_LED2, HIGH); break;
+      case 3: digitalWrite(GREEN_LED1, HIGH); break;
+      case 4: digitalWrite(YELLOW_LED2, HIGH); break;
+      case 5: digitalWrite(YELLOW_LED1, HIGH); break;
+    }
+    
+    policeState++;
+    lastPatternUpdate = currentMillis;
+    
+    // If one full rotation is complete
+    if (policeState >= 6) {
+      policeState = 0;
+      totalRotations++;
+      
+      // After required number of rotations
+      if (totalRotations >= ROTATIONS_REQUIRED) {
+        totalRotations = 0;
+        policeRotationEnabled = false;
+        preventPatternOverride = false;
+        Firebase.RTDB.setBool(&fbdo, "system/policeRotation", false);
+        Serial.println("Police rotations complete, disabled");
+        
+        setAllLEDs(LOW);
+      }
+    }
+  }
 }
 
 // Function to control the water pump
@@ -183,16 +295,33 @@ void handleControlUpdates() {
     } else {
         Serial.printf("Failed to get manual pump state: %s\n", fbdo.errorReason().c_str());
     }
+  
+  if (Firebase.RTDB.getBool(&fbdo, "system/sosSignal")) {
+    bool newSosState = fbdo.boolData();
+    if (newSosState && !preventPatternOverride) {
+      sosSignalEnabled = true;
+      policeRotationEnabled = false;
+      preventPatternOverride = true;
+      Serial.println("SOS Signal activated");
+    }
+  }
+  
+  if (Firebase.RTDB.getBool(&fbdo, "system/policeRotation")) {
+    bool newPoliceState = fbdo.boolData();
+    if (newPoliceState && !preventPatternOverride) {
+      policeRotationEnabled = true;
+      sosSignalEnabled = false;
+      preventPatternOverride = true;
+      Serial.println("Police Rotation activated");
+    }
+  }
 }
 
 // Function to send data to Firebase
 void sendDataToFirebase() {
   if (!systemEnabled) {
     // Turn off all LEDs and pump when system is disabled
-    digitalWrite(RED_LED1, LOW);
-    digitalWrite(YELLOW_LED1, LOW);
-    digitalWrite(YELLOW_LED2, LOW);
-    digitalWrite(GREEN_LED1, LOW);
+    setAllLEDs(LOW);
     digitalWrite(PUMP_RELAY_PIN, RELAY_OFF);
     return;
   }
@@ -259,6 +388,16 @@ void sendDataToFirebase() {
   if (waterLevelPercentage < thresholds.waterLevel) {
     Serial.println("Water level below threshold!");
   }
+}
+
+void updateProgressBar() {
+  if (!systemEnabled || sosSignalEnabled || policeRotationEnabled) {
+    return;
+  }
+
+  // Read soil moisture data
+  int soilReading = analogRead(SOIL_PIN);
+  float soilMoisture = 100.0 - ((soilReading / 1023.0) * 100.0);
 
   // Update LED progress bar based on soil moisture
   if (soilMoisture < 10) {
@@ -312,10 +451,24 @@ void setup() {
 
 void loop() {
   if (Firebase.ready() && signupOK) {
+    // Data updates (every 15 seconds)
     if (millis() - sendDataPrevMillis > DATA_SEND_INTERVAL) {
       sendDataPrevMillis = millis();
-      handleControlUpdates();  // Check for control updates
-      sendDataToFirebase();    // Send sensor data
+      handleControlUpdates();
+      sendDataToFirebase();
+    }
+
+    // LED updates (50 ms)
+    if (millis() - lastLedCheck > LED_UPDATE_INTERVAL) {
+      lastLedCheck = millis();
+      
+      if (sosSignalEnabled && systemEnabled) {
+        performSOSSignal();
+      } else if (policeRotationEnabled && systemEnabled) {
+        performPoliceRotation();
+      } else {
+        updateProgressBar();
+      }
     }
   }
 }

@@ -839,6 +839,13 @@
         <p></p>
         <br>
         <button id="saveConfig">Save Configuration</button>
+        <button id="sosButton" style="display: none;" onclick="toggleSOS()">
+          SOS Signal
+        </button>
+
+        <button id="policeButton" style="display: none;" onclick="togglePolice()">
+          Police Rotation
+        </button>
       </div>
     </div>
 
@@ -969,7 +976,19 @@
       normal: "Normal",
       warning: "Warning",
       critical: "Critical",
-      perPage: "per page"
+      perPage: "per page",
+      pumpMode: "Pump Mode",
+      pumpManual: "Manual",
+      pumpAuto: "Automatic",
+      manualPumpControl: "Manual Pump Control",
+      systemStatusUpdated: "System status updated successfully",
+      systemStatusError: "Failed to update system status",
+      pumpModeUpdated: "Pump mode updated successfully",
+      pumpModeError: "Failed to update pump mode",
+      pumpStateUpdated: "Pump state updated successfully",
+      pumpStateError: "Failed to update pump state",
+      sosSignal: "SOS Signal",
+      policeRotation: "Police Rotation"
     },
     bs: {
       title: "Plastenik",
@@ -998,7 +1017,19 @@
       normal: "Normalno",
       warning: "Upozorenje",
       critical: "Kritično",
-      perPage: "po stranici"
+      perPage: "po stranici",
+      pumpMode: "Način Rada Pumpe",
+      pumpManual: "Ručno",
+      pumpAuto: "Automatski",
+      manualPumpControl: "Ručna Kontrola Pumpe",
+      systemStatusUpdated: "Status sistema uspješno ažuriran",
+      systemStatusError: "Greška pri ažuriranju statusa sistema",
+      pumpModeUpdated: "Način rada pumpe uspješno ažuriran",
+      pumpModeError: "Greška pri ažuriranju načina rada pumpe",
+      pumpStateUpdated: "Status pumpe uspješno ažuriran",
+      pumpStateError: "Greška pri ažuriranju statusa pumpe",
+      sosSignal: "SOS Signal",
+      policeRotation: "Police Rotation"
     }
   };
 
@@ -1053,6 +1084,26 @@
               e.target.checked = !e.target.checked; // Revert if update fails
             });
   });
+
+  function toggleSOS() {
+    const isEnabled = true;
+
+    // Update button appearance
+    document.getElementById('sosButton').classList.toggle('active');
+
+    // Update Firebase
+    db.ref('system/sosSignal').set(isEnabled);
+  }
+
+  function togglePolice() {
+    const isEnabled = true;
+
+    // Update button appearance
+    document.getElementById('policeButton').classList.toggle('active');
+
+    // Update Firebase
+    db.ref('system/policeRotation').set(isEnabled);
+  }
 
   // Initialize charts
   const tempHumidityChart = new Chart(
@@ -1320,6 +1371,33 @@
     // Update pagination text
     document.querySelectorAll('#pageSize option').forEach(option => {
       option.text = `${option.value} ${currentLang.perPage}`;
+    });
+
+    // Update pump controls
+    const pumpModeLabel = document.querySelector('.pump-controls');
+    pumpModeLabel.firstChild.textContent = currentLang.pumpMode + ':';
+
+    const pumpModeSelect = document.getElementById('pumpMode');
+    pumpModeSelect.options[0].text = currentLang.pumpAuto;
+    pumpModeSelect.options[1].text = currentLang.pumpManual;
+
+    const manualPumpLabel = document.querySelector('.pump-manual-control');
+    manualPumpLabel.firstChild.textContent = currentLang.manualPumpControl + ':';
+
+    // Update SOS and Police buttons
+    document.getElementById('sosButton').textContent = currentLang.sosSignal;
+    document.getElementById('policeButton').textContent = currentLang.policeRotation;
+
+    // Update alert messages in event listeners
+    document.getElementById('systemStatus').addEventListener('change', function(e) {
+      db.ref('system/status').set(e.target.checked)
+              .then(() => {
+                showAlert(currentLang.systemStatusUpdated, 'success');
+              })
+              .catch(error => {
+                showAlert(currentLang.systemStatusError + ': ' + error.message, 'error');
+                e.target.checked = !e.target.checked;
+              });
     });
 
     tempHumidityChart.update();
