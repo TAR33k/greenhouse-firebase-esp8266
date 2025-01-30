@@ -1321,9 +1321,9 @@
 
     const configLabels = document.querySelectorAll('.config-grid label');
     configLabels[0].firstChild.textContent = currentLang.systemStatus + ':';
-    configLabels[1].firstChild.textContent = currentLang.soilThreshold + ':';
-    configLabels[2].firstChild.textContent = currentLang.waterThreshold + ':';
-    configLabels[3].firstChild.textContent = currentLang.tankHeight + ':';
+    configLabels[5].firstChild.textContent = currentLang.tankHeight + ':';
+    configLabels[4].firstChild.textContent = currentLang.waterThreshold + ':';
+    configLabels[3].firstChild.textContent = currentLang.soilThreshold + ':';
     document.getElementById('saveConfig').textContent = currentLang.saveConfig;
 
     // Update timeframe select options

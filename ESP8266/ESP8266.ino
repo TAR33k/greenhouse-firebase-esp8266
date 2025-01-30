@@ -59,7 +59,7 @@ bool signupOK = false;
 // System control variables
 bool systemEnabled = false;
 struct {
-  float soilMoisture = 30.0;
+  float soilMoisture = 20.0;
   float waterLevel = 20.0;
   bool automaticMode = true;  // Pump control mode
   bool pumpManualState = false;  // Manual pump control state
@@ -156,6 +156,7 @@ void performSOSSignal() {
     0,                      // Letter space
     1,0, 1,0, 1,0          // S (dot dot dot)
   };
+
   static int patternLength = sizeof(sosPattern) / sizeof(sosPattern[0]);
   static int currentStep = 0;
   
@@ -172,7 +173,7 @@ void performSOSSignal() {
     digitalWrite(YELLOW_LED1, sosPattern[currentStep]);
     digitalWrite(YELLOW_LED2, sosPattern[currentStep]);
     digitalWrite(GREEN_LED1, sosPattern[currentStep]);
-    
+
     currentStep++;
     lastPatternUpdate = currentMillis;
     
