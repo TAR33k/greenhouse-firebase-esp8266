@@ -815,7 +815,7 @@
             <option value="manual">Manual</option>
           </select>
         </label>
-        <label class="pump-manual-control">
+        <label class="pump-manual-control" style="width: 200px">
           Manual Pump Control:
           <div class="switch-container">
             <input type="checkbox" id="pumpManualControl" disabled />
@@ -961,8 +961,6 @@
       tankHeight: "Tank Height",
       saveConfig: "Save Configuration",
       time: "Time",
-      configSaved: "Configuration saved successfully",
-      configError: "Error saving configuration",
       search: "Search...",
       allValues: "All Values",
       allRanges: "All Ranges",
@@ -976,10 +974,46 @@
       manualPumpControl: "Manual Pump Control",
       systemStatusUpdated: "System status updated successfully",
       systemStatusError: "Failed to update system status",
-      pumpModeUpdated: "Pump mode updated successfully",
-      pumpModeError: "Failed to update pump mode",
-      pumpStateUpdated: "Pump state updated successfully",
-      pumpStateError: "Failed to update pump state"
+      // Page info translations
+      pageOf: "Page {0} of {1}",
+      noDataAvailable: "No data available for the selected filters",
+
+      // Chart titles
+      tempHumidityTitle: "Temperature & Humidity",
+      soilWaterTitle: "Soil Moisture & Water Level",
+
+      // Table headers for CSV
+      csvHeaders: {
+        time: "Time",
+        temperature: "Temperature (°C)",
+        humidity: "Humidity (%)",
+        soilMoisture: "Soil Moisture (%)",
+        waterLevel: "Water Level (%)"
+      },
+
+      // Footer translations
+      footerTitle: "Smart Greenhouse",
+      footerDescription: "A smart IoT solution for automated greenhouse monitoring and control. Developed as a student project at the Faculty of Information Technologies, \"Džemal Bijedić\" University of Mostar.",
+      technologiesUsed: "Technologies Used",
+      features: "Features",
+      realTimeMonitoring: "Real-time Monitoring",
+      automatedControl: "Automated Control",
+      dataVisualization: "Data Visualization",
+      exportFunctionality: "Export Functionality",
+      createdBy: "Created by",
+      version: "Version",
+      alerts: {
+        configSaved: "Configuration saved successfully",
+        configError: "Error saving configuration",
+        systemStatusUpdated: "System status updated successfully",
+        systemStatusError: "Failed to update system status",
+        pumpModeUpdated: "Pump mode updated successfully",
+        pumpModeError: "Failed to update pump mode",
+        pumpStateUpdated: "Pump state updated successfully",
+        pumpStateError: "Failed to update pump state",
+        noDataToExport: "No valid data to export",
+        dataExported: "Data exported successfully"
+      }
     },
     bs: {
       title: "Plastenik",
@@ -1000,8 +1034,6 @@
       tankHeight: "Visina Rezervoara",
       saveConfig: "Sačuvaj Konfiguraciju",
       time: "Vrijeme",
-      configSaved: "Konfiguracija uspješno sačuvana",
-      configError: "Greška pri čuvanju konfiguracije",
       search: "Pretraga...",
       allValues: "Sve Vrijednosti",
       allRanges: "Svi Rasponi",
@@ -1013,26 +1045,52 @@
       pumpManual: "Ručno",
       pumpAuto: "Automatski",
       manualPumpControl: "Ručna Kontrola Pumpe",
-      systemStatusUpdated: "Status sistema uspješno ažuriran",
-      systemStatusError: "Greška pri ažuriranju statusa sistema",
-      pumpModeUpdated: "Način rada pumpe uspješno ažuriran",
-      pumpModeError: "Greška pri ažuriranju načina rada pumpe",
-      pumpStateUpdated: "Status pumpe uspješno ažuriran",
-      pumpStateError: "Greška pri ažuriranju statusa pumpe"
+      // Page info translations
+      pageOf: "Stranica {0} od {1}",
+      noDataAvailable: "Nema dostupnih podataka za odabrane filtere",
+
+      // Chart titles
+      tempHumidityTitle: "Temperatura i Vlažnost",
+      soilWaterTitle: "Vlažnost Tla i Nivo Vode",
+
+      // Table headers for CSV
+      csvHeaders: {
+        time: "Vrijeme",
+        temperature: "Temperatura (°C)",
+        humidity: "Vlažnost (%)",
+        soilMoisture: "Vlažnost Tla (%)",
+        waterLevel: "Nivo Vode (%)"
+      },
+
+      // Footer translations
+      footerTitle: "Pametni Plastenik",
+      footerDescription: "Pametno IoT rješenje za automatsko praćenje i kontrolu plastenika. Razvijeno kao studentski projekat na Fakultetu informacijskih tehnologija Univerziteta \"Džemal Bijedić\" u Mostaru.",
+      technologiesUsed: "Korištene Tehnologije",
+      features: "Funkcionalnosti",
+      realTimeMonitoring: "Praćenje u Realnom Vremenu",
+      automatedControl: "Automatska Kontrola",
+      dataVisualization: "Vizualizacija Podataka",
+      exportFunctionality: "Funkcionalnost Izvoza",
+      createdBy: "Kreirao",
+      version: "Verzija",
+      alerts: {
+        configSaved: "Konfiguracija uspješno sačuvana",
+        configError: "Greška pri čuvanju konfiguracije",
+        systemStatusUpdated: "Status sistema uspješno ažuriran",
+        systemStatusError: "Greška pri ažuriranju statusa sistema",
+        pumpModeUpdated: "Način rada pumpe uspješno ažuriran",
+        pumpModeError: "Greška pri ažuriranju načina rada pumpe",
+        pumpStateUpdated: "Status pumpe uspješno ažuriran",
+        pumpStateError: "Greška pri ažuriranju statusa pumpe",
+        noDataToExport: "Nema validnih podataka za izvoz",
+        dataExported: "Podaci uspješno izvezeni"
+      }
     }
   };
 
-  // System status toggle handler
-  document.getElementById('systemStatus').addEventListener('change', function(e) {
-    db.ref('system/status').set(e.target.checked)
-            .then(() => {
-              showAlert('System status updated successfully', 'success');
-            })
-            .catch(error => {
-              showAlert('Failed to update system status: ' + error.message, 'error');
-              e.target.checked = !e.target.checked; // Revert the toggle if update fails
-            });
-  });
+  let currentPage = 1;
+  let filteredData = [];
+  let currentLang = translations.en;
 
   // Pump mode handler
   document.getElementById('pumpMode').addEventListener('change', function(e) {
@@ -1052,13 +1110,12 @@
     // Update Firebase
     db.ref().update(updates)
             .then(() => {
-              // Update the UI
               pumpManualControl.checked = false;
-              showAlert('Pump mode updated successfully', 'success');
+              showAlert(currentLang.alerts.pumpModeUpdated, 'success');
             })
             .catch(error => {
-              showAlert('Failed to update pump mode: ' + error.message, 'error');
-              e.target.value = isManual ? 'manual' : 'auto'; // Revert if update fails
+              showAlert(`${currentLang.alerts.pumpModeError}: ${error.message}`, 'error');
+              e.target.value = isManual ? 'manual' : 'auto';
             });
   });
 
@@ -1066,11 +1123,11 @@
   document.getElementById('pumpManualControl').addEventListener('change', function(e) {
     db.ref('pump/manualState').set(e.target.checked)
             .then(() => {
-              showAlert('Pump state updated successfully', 'success');
+              showAlert(currentLang.alerts.pumpStateUpdated, 'success');
             })
             .catch(error => {
-              showAlert('Failed to update pump state: ' + error.message, 'error');
-              e.target.checked = !e.target.checked; // Revert if update fails
+              showAlert(`${currentLang.alerts.pumpStateError}: ${error.message}`, 'error');
+              e.target.checked = !e.target.checked;
             });
   });
 
@@ -1252,14 +1309,13 @@
       waterLevel: config.waterLevel
     })
             .then(() => {
-              // Update tank height separately
               return db.ref('thresholds/tankHeight').set(config.tankHeight);
             })
             .then(() => {
-              showAlert('Configuration saved successfully', 'success');
+              showAlert(currentLang.alerts.configSaved, 'success');
             })
             .catch(error => {
-              showAlert('Error saving configuration: ' + error.message, 'error');
+              showAlert(`${currentLang.alerts.configError}: ${error.message}`, 'error');
             });
   });
 
@@ -1273,7 +1329,12 @@
 
   // Language switching functionality
   function updateLanguage(lang) {
-    const currentLang = translations[lang];
+    // Set the current language
+    currentLang = translations[lang];
+
+    // Calculate totalPages here
+    const pageSize = parseInt(document.getElementById('pageSize').value);
+    const totalPages = Math.max(1, Math.ceil(filteredData.length / pageSize));
 
     // Update all translatable elements
     const elements = {
@@ -1353,20 +1414,51 @@
     const manualPumpLabel = document.querySelector('.pump-manual-control');
     manualPumpLabel.firstChild.textContent = currentLang.manualPumpControl + ':';
 
+    tempHumidityChart.update();
+    soilWaterChart.update();
+
     // Update alert messages in event listeners
     document.getElementById('systemStatus').addEventListener('change', function(e) {
       db.ref('system/status').set(e.target.checked)
               .then(() => {
-                showAlert(currentLang.systemStatusUpdated, 'success');
+                showAlert(currentLang.alerts.systemStatusUpdated, 'success');
               })
               .catch(error => {
-                showAlert(currentLang.systemStatusError + ': ' + error.message, 'error');
+                showAlert(currentLang.alerts.systemStatusError + ': ' + error.message, 'error');
                 e.target.checked = !e.target.checked;
               });
     });
 
-    tempHumidityChart.update();
-    soilWaterChart.update();
+    // Update page info text
+    document.getElementById('pageInfo').textContent =
+            currentLang.pageOf.replace('{0}', currentPage).replace('{1}', totalPages);
+
+    // Update chart titles
+    tempHumidityChart.options.plugins.title.text = currentLang.tempHumidityTitle;
+    soilWaterChart.options.plugins.title.text = currentLang.soilWaterTitle;
+
+    // Update footer translations
+    document.querySelector('footer h3').textContent = currentLang.footerTitle;
+    document.querySelector('footer p').textContent = currentLang.footerDescription;
+
+    const footerHeaders = document.querySelectorAll('footer h4');
+    footerHeaders[0].textContent = currentLang.technologiesUsed;
+    footerHeaders[1].textContent = currentLang.features;
+
+    const featuresList = document.querySelectorAll('footer div:nth-child(2) ul li');
+    featuresList[0].textContent = currentLang.realTimeMonitoring;
+    featuresList[1].textContent = currentLang.automatedControl;
+    featuresList[2].textContent = currentLang.dataVisualization;
+    featuresList[3].textContent = currentLang.exportFunctionality;
+
+    // Update page info text with calculated values
+    document.getElementById('pageInfo').textContent =
+            currentLang.pageOf.replace('{0}', currentPage).replace('{1}', totalPages);
+
+    // Update CSV export event listener
+    const exportButton = document.getElementById('exportCSV');
+    exportButton.removeEventListener('click', exportCSVHandler);
+    exportButton.addEventListener('click', exportCSVHandler);
   }
 
   document.getElementById('languageSelect').addEventListener('change', (e) => {
@@ -1422,9 +1514,6 @@
       updateHistoryTable(filteredData);
     });
   }
-
-  let currentPage = 1;
-  let filteredData = [];
 
   // History table update
   function updateHistoryTable(historyData) {
@@ -1628,68 +1717,145 @@
   });
 
   // CSV Export functionality
-  document.getElementById('exportCSV').addEventListener('click', () => {
+  function exportCSVHandler() {
     db.ref('history').once('value', (snapshot) => {
-      const data = [];
+        const data = [];
 
-      snapshot.forEach((childSnapshot) => {
-        const record = childSnapshot.val();
-        // Check if record has all required properties
-        if (record && record.timestamp &&
-                record.temperature_C !== undefined &&
-                record.humidity !== undefined &&
-                record.soil_moisture !== undefined &&
-                record.water_level_percentage !== undefined) {
+        snapshot.forEach((childSnapshot) => {
+          const record = childSnapshot.val();
+          // Check if record has all required properties
+          if (record && record.timestamp &&
+                  record.temperature_C !== undefined &&
+                  record.humidity !== undefined &&
+                  record.soil_moisture !== undefined &&
+                  record.water_level_percentage !== undefined) {
 
-          const date = new Date(parseInt(record.timestamp) * 1000);
+            const date = new Date(parseInt(record.timestamp) * 1000);
 
-          data.push({
-            timestamp: date.toLocaleString(),
-            temperature: record.temperature_C,
-            humidity: record.humidity,
-            soil_moisture: record.soil_moisture,
-            water_level: record.water_level_percentage
-          });
-        }
-      });
+            data.push({
+              timestamp: date.toLocaleString(),
+              temperature: record.temperature_C,
+              humidity: record.humidity,
+              soil_moisture: record.soil_moisture,
+              water_level: record.water_level_percentage
+            });
+          }
+        });
 
       if (data.length === 0) {
-        showAlert('No valid data to export', 'error');
+        showAlert(currentLang.alerts.noDataToExport, 'error');
         return;
       }
 
-      // Sort data by timestamp
-      data.sort((a, b) => new Date(a.timestamp) - new Date(b.timestamp));
+        // Sort data by timestamp
+        data.sort((a, b) => new Date(a.timestamp) - new Date(b.timestamp));
 
-      // Create CSV content
-      const headers = ['Time', 'Temperature (°C)', 'Humidity (%)', 'Soil Moisture (%)', 'Water Level (%)'];
-      const csvRows = [
-        headers.join(','),
-        ...data.map(row => [
-          `"${row.timestamp}"`,
-          row.temperature.toFixed(1),
-          row.humidity.toFixed(1),
-          row.soil_moisture.toFixed(1),
-          row.water_level.toFixed(1)
-        ].join(','))
-      ];
+        // Create CSV content
+        const headers = ['Time', 'Temperature (°C)', 'Humidity (%)', 'Soil Moisture (%)', 'Water Level (%)'];
+        const csvRows = [
+          headers.join(','),
+          ...data.map(row => [
+            `"${row.timestamp}"`,
+            row.temperature.toFixed(1),
+            row.humidity.toFixed(1),
+            row.soil_moisture.toFixed(1),
+            row.water_level.toFixed(1)
+          ].join(','))
+        ];
 
-      const csvContent = csvRows.join('\n');
+        const csvContent = csvRows.join('\n');
 
-      // Create and trigger download
-      const blob = new Blob([csvContent], { type: 'text/csv;charset=utf-8;' });
-      const url = window.URL.createObjectURL(blob);
-      const link = document.createElement('a');
-      link.setAttribute('href', url);
-      link.setAttribute('download', `greenhouse_data_${new Date().toISOString().split('T')[0]}.csv`);
-      document.body.appendChild(link);
-      link.click();
-      document.body.removeChild(link);
-      window.URL.revokeObjectURL(url);
+        // Create and trigger download
+        const blob = new Blob([csvContent], { type: 'text/csv;charset=utf-8;' });
+        const url = window.URL.createObjectURL(blob);
+        const link = document.createElement('a');
+        link.setAttribute('href', url);
+        link.setAttribute('download', `greenhouse_data_${new Date().toISOString().split('T')[0]}.csv`);
+        document.body.appendChild(link);
+        link.click();
+        document.body.removeChild(link);
+        window.URL.revokeObjectURL(url);
 
-      showAlert('Data exported successfully', 'success');
+      showAlert(currentLang.alerts.dataExported, 'success');
     });
+  }
+
+  // Update the initial language on page load
+  document.addEventListener('DOMContentLoaded', () => {
+    // Set initial theme
+    const prefersDark = window.matchMedia('(prefers-color-scheme: dark)').matches;
+    document.body.dataset.theme = prefersDark ? 'dark' : 'light';
+    themeToggle.innerHTML = `<i class="fas fa-${prefersDark ? 'sun' : 'moon'}"></i>`;
+
+    // Set initial language
+    const initialLang = document.getElementById('languageSelect').value;
+    updateLanguage(initialLang);
+  });
+
+  // Update the charts update handler
+  db.ref('sensor').on('value', (snapshot) => {
+    const data = snapshot.val();
+    if (data) {
+      updateSensorDisplay(data);
+      try {
+        updateCharts();
+      } catch (error) {
+        console.error('Error updating charts:', error);
+      }
+    }
   });
 </script>
+
+<footer style="
+    background: var(--card-bg);
+    padding: 2rem;
+    margin-top: 2rem;
+    text-align: center;
+    border-top: 1px solid var(--border-color);
+    color: var(--text-color);
+    font-family: 'Poppins', sans-serif;
+">
+  <div class="container">
+    <div style="max-width: 800px; margin: 0 auto;">
+      <h3 style="margin-bottom: 1rem; color: var(--primary-color);">Smart Greenhouse</h3>
+      <p style="margin-bottom: 1rem; font-size: 0.9rem;">
+        A smart IoT solution for automated greenhouse monitoring and control.<br>
+        Developed as a student project at the Faculty of Information Technologies, "Džemal Bijedić" University of Mostar.
+      </p>
+      <div style="
+                display: flex;
+                justify-content: center;
+                gap: 2rem;
+                margin: 1.5rem 0;
+                flex-wrap: wrap;
+            ">
+        <div>
+          <h4 style="color: var(--secondary-color); margin-bottom: 0.5rem;">Technologies Used</h4>
+          <ul style="list-style: none; padding: 0; font-size: 0.9rem;">
+            <li>ESP8266 NodeMCU</li>
+            <li>Firebase Realtime Database</li>
+            <li>HTML/CSS/JavaScript</li>
+            <li>Chart.js</li>
+          </ul>
+        </div>
+        <div>
+          <h4 style="color: var(--secondary-color); margin-bottom: 0.5rem;">Features</h4>
+          <ul style="list-style: none; padding: 0; font-size: 0.9rem;">
+            <li>Real-time Monitoring</li>
+            <li>Automated Control</li>
+            <li>Data Visualization</li>
+            <li>Export Functionality</li>
+          </ul>
+        </div>
+      </div>
+      <div style="font-size: 0.8rem; color: var(--text-color); opacity: 0.8;">
+        <p>2025 Greenhouse Monitor</p>
+        <p style="margin-top: 0.5rem;">
+          Created by Tarik Kukuljac (IB220202) | Version 1.0
+        </p>
+      </div>
+    </div>
+  </div>
+</footer>
 </body>
 </html>
