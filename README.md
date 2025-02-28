@@ -49,7 +49,7 @@ Ensure you have the following installed:
 4. Open the `index.html` file in a web browser to access the web application.
 
 ## 📝 Documentation
-Comprehensive documentation is available in the `/docs` directory, including:
+Comprehensive documentation is available in the `/Docs` directory, including:
 - **Project Description**
 - **Hardware and Software Components**
 - **System Functionalities**
