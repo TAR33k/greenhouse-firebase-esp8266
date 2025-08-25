@@ -1,66 +1,117 @@
-# 🌱 Greenhouse Monitor
+<div align="center">
 
-An automated irrigation system for greenhouses that combines hardware and software components to create an efficient IoT solution.
+  <h1 style="font-size: 3em; margin-bottom: 0;">
+    🌱
+    <br>
+    <font color="#4CAF50" style="font-weight: bold;">Greenhouse Monitor</font>
+  </h1>
 
-## 📌 Overview
-The Greenhouse Monitor project utilizes the ESP8266 microcontroller to manage sensors and a water pump, while a web application serves as the user interface for monitoring and control. This system allows users to efficiently manage greenhouse conditions, ensuring optimal growth for plants.
+  <h3 style="font-weight: normal; margin-top: 0;">An IoT-Powered Automated Irrigation System</h3>
 
-## 🌐 Live Demo
-The web application is hosted at: [Greenhouse Monitor](https://esp8266-firebase-demo-6e68a.web.app/)
+  A complete IoT solution combining an ESP8266 microcontroller, sensors, and a web-based dashboard to automate and monitor greenhouse conditions.
 
-## ✨ Features
-### Control Interface
-- **Web Application**: A user-friendly interface for managing the greenhouse system. Users can monitor real-time sensor values, view historical data through interactive graphs, and control the water pump.
-- **Automatic and Manual Modes**: Switch between automatic irrigation based on soil moisture levels and manual control via the web interface.
+  <p>
+    <img alt="Hardware" src="https://img.shields.io/badge/Hardware-ESP8266-E73525.svg?style=for-the-badge&logo=espressif"/>
+    <img alt="Backend" src="https://img.shields.io/badge/Backend-Firebase-FFCA28.svg?style=for-the-badge&logo=firebase"/>
+    <img alt="Frontend" src="https://img.shields.io/badge/Frontend-JavaScript-F7DF1E.svg?style=for-the-badge&logo=javascript"/>
+  </p>
 
-### Sensor Monitoring
-- **Temperature and Humidity**: Monitors environmental conditions using a DHT11 sensor.
-- **Soil Moisture**: Measures soil moisture levels with an analog sensor.
-- **Water Level**: Uses an HC-SR04 ultrasonic sensor to measure water levels in the reservoir.
+   <a href="https://esp8266-firebase-demo-6e68a.web.app/" target="_blank">
+      <img alt="Live Demo" src="https://img.shields.io/badge/Live_Demo-View_Dashboard-brightgreen.svg?style=for-the-badge"/>
+   </a>
+</div>
 
-### Visual Indicators
-- **LED Indicators**: Four LEDs provide visual feedback on soil moisture levels, indicating critical, low, medium, and optimal states.
+---
 
-### Data Management
-- **Firebase Integration**: Utilizes Firebase Realtime Database for two-way communication between the ESP8266 and the web application, allowing for real-time updates and historical data storage.
+## About Greenhouse Monitor
 
-## 🛠️ Tech Stack
-- **ESP8266 NodeMCU**: Microcontroller for managing sensors and actuators.
-- **Firebase**: Realtime Database for data storage and communication.
-- **HTML/CSS/JavaScript**: Technologies used for developing the web application.
-- **Chart.js**: Library for rendering interactive graphs.
+**Greenhouse Monitor** is an end-to-end IoT project designed to automate plant care within a greenhouse. The system leverages an **ESP8266** microcontroller to collect real-time data from environmental sensors and control a water pump. All data is synchronized with a **Firebase Realtime Database**, which powers a web-based dashboard, allowing for remote monitoring and control from any device.
 
-## 🚀 Getting Started
+### Key Features
+
+| Category              | Core Functionality                                                                                             |
+| --------------------- | -------------------------------------------------------------------------------------------------------------- |
+| **Remote Control**    | A responsive web dashboard to monitor live sensor data and manually toggle the water pump on or off.         |
+| **Automation**        | An "Automatic Mode" that triggers the irrigation system based on predefined soil moisture thresholds.          |
+| **Data Visualization**| Interactive charts powered by **Chart.js** display historical sensor data, helping track environmental trends. |
+| **Real-Time Sync**    | **Firebase** ensures seamless, two-way communication between the hardware and the web dashboard.                |
+| **Hardware Feedback** | Onboard LEDs provide an immediate visual status of soil moisture levels (Critical, Low, Medium, Optimal).      |
+| **Sensor Suite**      | Monitors key metrics: soil moisture, water reservoir level, ambient temperature, and humidity.                 |
+
+---
+
+## How It Works
+
+The system operates on a simple yet effective data flow, enabling real-time interaction between the physical hardware and the cloud-based user interface.
+
+1.  **Data Collection:** The ESP8266 continuously reads data from the DHT11 (temperature/humidity), soil moisture, and ultrasonic (water level) sensors.
+2.  **Cloud Sync:** This data is pushed to the Firebase Realtime Database in a structured JSON format.
+3.  **Dashboard Display:** The web application listens for changes in the Firebase database and instantly updates the dashboard with the latest sensor readings and historical graphs.
+4.  **User Control:** When a user toggles the pump or changes the mode on the web app, the command is written to Firebase.
+5.  **Hardware Action:** The ESP8266 listens for specific data changes in Firebase and activates or deactivates the water pump relay accordingly.
+
+---
+
+## Tech Stack
+
+The project integrates hardware, cloud services, and frontend technologies to create a cohesive system.
+
+| Component         | Technology / Tool                                     | Purpose                                                              |
+| ----------------- | ----------------------------------------------------- | -------------------------------------------------------------------- |
+| **Microcontroller** | **ESP8266 NodeMCU**                                   | The brain of the system; connects to WiFi, reads sensors, controls pump. |
+| **Sensors**       | **DHT11**, **Analog Soil Moisture**, **HC-SR04**        | Collects environmental and system data.                              |
+| **Backend & DB**  | **Firebase Realtime Database**                        | Provides a cloud-hosted NoSQL database for real-time data sync.      |
+| **Frontend**      | **HTML**, **CSS**, **JavaScript**             | Builds the structure, style, and logic of the user dashboard.        |
+| **Charting**      | **Chart.js**                                          | Renders interactive and responsive charts for historical data.       |
+| **IDE**           | **Arduino IDE**                                       | Used to program and upload the firmware to the ESP8266.              |
+
+---
+
+## Getting Started
+
+Follow these steps to set up the project on your own hardware.
+
 ### Prerequisites
-Ensure you have the following installed:
-- **Arduino IDE**: For programming the ESP8266.
-- **Firebase Account**: To set up the Realtime Database.
 
-### Installation
-1. Clone the repository:
-   ```bash
-   git clone https://github.com/TAR33k/greenhouse-firebase-esp8266.git
-   ```
+*   An **ESP8266 NodeMCU** board and the required sensors/actuators.
+*   A **Firebase Account** with a new Realtime Database project created.
+*   **[Arduino IDE](https://www.arduino.cc/en/software)** installed and configured for the ESP8266 board.
 
-2. Open the Arduino IDE and upload the ESP8266 code to your microcontroller.
+### Setup Instructions
 
-3. Set up the Firebase project and configure the database URL and API key in the code.
+**1. Clone the Repository**
 
-4. Open the `index.html` file in a web browser to access the web application.
+```bash
+git clone https://github.com/TAR33k/greenhouse-firebase-esp8266.git
+```
 
-## 📝 Documentation
-Comprehensive documentation is available in the `/Docs` directory, including:
-- **Project Description**
-- **Hardware and Software Components**
-- **System Functionalities**
-- **FSM Diagram**
+**2. Configure Firebase**
 
-## 🔜 Future Enhancements
-- Integration of weather API for external climate data.
-- Advanced analytics for greenhouse performance.
+1.  In your Firebase project, go to **Realtime Database** and create a database.
+2.  Under **Project Settings**, find your **Web API Key** and **Database URL**.
+3.  In the Arduino code (`.ino` file), replace the placeholder values for `API_KEY` and `DATABASE_URL` with your credentials. Also, enter your WiFi SSID and password.
+4.  In the Web code (`index.html` file), replace the placeholder values for `firebaseConfig`.
 
-## 🏫 About
-This project was developed as part of the **IoT** coursework at the **Faculty of Information Technologies**.
+**3. Hardware & Firmware**
 
-📌 Built by:
-- **Tarik Kukuljac** (IB220202)
+1.  Assemble the hardware.
+2.  Open the `.ino` file in the Arduino IDE, install any required libraries (e.g., Firebase Arduino, DHT sensor library).
+3.  Upload the code to your ESP8266 board.
+
+**4. Launch the Web App**
+
+Simply open the `index.html` file in your web browser. The dashboard will automatically connect to your Firebase instance and display data once the ESP8266 is online.
+
+---
+
+## Project Information
+
+-   **Documentation:** Comprehensive documentation, including a detailed **Project Description**, **FSM Diagram**, and component lists, is available in the `/Docs` directory.
+
+-   **Future Enhancements:**
+    -   Integration of a weather API to make smarter irrigation decisions.
+    -   Advanced analytics and pattern recognition for plant health.
+
+### About This Project
+
+This project was developed as part of the **Internet of Things (IoT)** coursework at the **Faculty of Information Technologies, "Džemal Bijedić" University of Mostar**.
